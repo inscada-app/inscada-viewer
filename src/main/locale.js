@@ -47,6 +47,16 @@ const translations = {
     // Connecting page
     'connecting.title': 'Bağlanıyor...',
     'connecting.info': 'Sunucu erişilebilir olduğunda otomatik bağlanılacak.',
+    'connecting.certRejectedTitle': 'Sertifika Reddedildi',
+    'connecting.certRejectedInfo': 'Sunucunun güvenlik sertifikasını reddettiniz. Yeniden denemek için Ayarlar\'dan bağlantıyı yenileyin.',
+
+    // Certificate trust dialog
+    'cert.title': 'Güvenilmeyen Sertifika',
+    'cert.message': '{host} adresindeki sunucu güvenilir olmayan (self-signed) bir sertifika sunuyor. Bu sunucuya güvenip devam etmek istiyor musunuz?',
+    'cert.fingerprint': 'Parmak İzi',
+    'cert.warning': 'Bu sunucuyu tanımıyorsanız veya sertifikanın beklenmedik şekilde değiştiğini düşünüyorsanız devam etmeyin.',
+    'cert.trust': 'Güven ve Bağlan',
+    'cert.cancel': 'İptal',
 
     // Splash page
     'splash.loading': 'Yükleniyor...',
@@ -105,6 +115,16 @@ const translations = {
     // Connecting page
     'connecting.title': 'Connecting...',
     'connecting.info': 'Will automatically connect when the server is available.',
+    'connecting.certRejectedTitle': 'Certificate Rejected',
+    'connecting.certRejectedInfo': 'You rejected the server\'s security certificate. Reconnect from Settings to try again.',
+
+    // Certificate trust dialog
+    'cert.title': 'Untrusted Certificate',
+    'cert.message': 'The server at {host} is presenting an untrusted (self-signed) certificate. Do you want to trust this server and continue?',
+    'cert.fingerprint': 'Fingerprint',
+    'cert.warning': 'Do not continue if you do not recognize this server or believe the certificate has changed unexpectedly.',
+    'cert.trust': 'Trust & Connect',
+    'cert.cancel': 'Cancel',
 
     // Splash page
     'splash.loading': 'Loading...',

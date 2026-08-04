@@ -1,7 +1,8 @@
-const { app, BrowserWindow, shell, session } = require('electron');
+const { app, BrowserWindow, shell, session, dialog } = require('electron');
 const path = require('path');
 const settingsStore = require('./settings-store');
 const windowState = require('./window-state');
+const certTrustStore = require('./cert-trust-store');
 const ConnectionChecker = require('./connection-checker');
 const tray = require('./tray');
 const ipcHandlers = require('./ipc-handlers');
@@ -244,6 +245,84 @@ function loadApp(url) {
   mainWindow.loadURL(url);
 }
 
+function showCertRejected(webContents) {
+  if (!webContents || webContents.isDestroyed()) return;
+  webContents.loadFile(path.join(__dirname, '../renderer/connecting.html'), {
+    query: { certRejected: '1' },
+  });
+}
+
+// Trust-On-First-Use handling for self-signed / untrusted certificates.
+// Remembers accept/reject decisions made in this run so parallel requests to
+// the same host (page + sub-resources) don't each pop their own dialog.
+const sessionCertDecisions = new Map();
+
+// Forgets prior reject decisions for a host so the user gets prompted again
+// next time it's reached (used when they explicitly retry from Settings).
+function clearSessionCertDecisions(hostPort) {
+  for (const key of sessionCertDecisions.keys()) {
+    if (key.startsWith(`${hostPort}|`)) {
+      sessionCertDecisions.delete(key);
+    }
+  }
+}
+
+app.on('certificate-error', (event, webContents, url, _error, certificate, callback) => {
+  let hostPort;
+  try {
+    const parsed = new URL(url);
+    hostPort = `${parsed.hostname}:${parsed.port || (parsed.protocol === 'https:' ? '443' : '80')}`;
+  } catch {
+    callback(false);
+    return;
+  }
+
+  const fingerprint = certificate.fingerprint;
+  const decisionKey = `${hostPort}|${fingerprint}`;
+
+  if (certTrustStore.isTrusted(hostPort, fingerprint)) {
+    event.preventDefault();
+    callback(true);
+    return;
+  }
+
+  if (sessionCertDecisions.has(decisionKey)) {
+    const trusted = sessionCertDecisions.get(decisionKey);
+    if (trusted) {
+      event.preventDefault();
+      callback(true);
+    } else {
+      callback(false);
+      showCertRejected(webContents);
+    }
+    return;
+  }
+
+  const ownerWindow = BrowserWindow.fromWebContents(webContents) || mainWindow;
+  const choice = dialog.showMessageBoxSync(ownerWindow, {
+    type: 'warning',
+    buttons: [locale.t('cert.trust'), locale.t('cert.cancel')],
+    defaultId: 1,
+    cancelId: 1,
+    noLink: true,
+    title: locale.t('cert.title'),
+    message: locale.t('cert.message').replace('{host}', hostPort),
+    detail: `${locale.t('cert.fingerprint')}: ${fingerprint}\n\n${locale.t('cert.warning')}`,
+  });
+
+  const trusted = choice === 0;
+  sessionCertDecisions.set(decisionKey, trusted);
+
+  if (trusted) {
+    certTrustStore.trust(hostPort, fingerprint);
+    event.preventDefault();
+    callback(true);
+  } else {
+    callback(false);
+    showCertRejected(webContents);
+  }
+});
+
 app.on('second-instance', () => {
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
@@ -294,8 +373,24 @@ app.whenReady().then(() => {
         rebuildTray();
       }
 
-      // Trigger a re-check with new URL
-      connectionChecker.check();
+      // Let a rejected certificate be re-prompted if the user is retrying via Settings
+      try {
+        const parsed = new URL(newSettings.url);
+        clearSessionCertDecisions(`${parsed.hostname}:${parsed.port || (parsed.protocol === 'https:' ? '443' : '80')}`);
+      } catch {
+        // Invalid URL — settings validation already rejects this before it gets here
+      }
+
+      // Re-check and reload explicitly — the connection may already read as "online"
+      // (e.g. stuck on the cert-rejected screen), so we can't rely on the online/offline
+      // transition in onStatusChange to trigger the reload.
+      connectionChecker.check().then((online) => {
+        if (online) {
+          loadApp(connectionChecker.url);
+        } else {
+          showConnecting();
+        }
+      });
     },
   });
 

@@ -54,6 +54,10 @@ class ConnectionChecker {
             path: parsedUrl.pathname,
             method: 'HEAD',
             timeout: this.timeout,
+            // This is only a reachability probe, not a security decision — the real
+            // certificate trust decision is made by the TOFU flow in main.js's
+            // 'certificate-error' handler before any page content is ever loaded.
+            rejectUnauthorized: false,
           },
           (res) => {
             res.resume();

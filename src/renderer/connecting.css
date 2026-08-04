@@ -24,6 +24,11 @@ body {
   animation: pulse 2s ease-in-out infinite;
 }
 
+.icon.warning circle {
+  stroke: #e8631a;
+  fill: #e8631a;
+}
+
 h2 {
   font-size: 20px;
   font-weight: 600;
