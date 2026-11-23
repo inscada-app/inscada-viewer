@@ -6,6 +6,29 @@ contextBridge.exposeInMainWorld('inscada', {
   getLocaleStrings: () => ipcRenderer.invoke('get-locale-strings'),
 });
 
+// Bridge for the inSCADA web UI (inscada-react): lets the app's own right-click
+// menu offer Fullscreen / Exit Fullscreen when running inside the Viewer. The UI
+// feature-detects `window.inscadaViewer` and falls back to the browser Fullscreen
+// API otherwise. Only this window's own fullscreen state can be read or changed.
+const fullscreenListeners = new Set();
+ipcRenderer.on('fullscreen-changed', (_e, fs) => {
+  for (const cb of fullscreenListeners) {
+    try { cb(!!fs); } catch { /* listener errors must not break others */ }
+  }
+});
+
+contextBridge.exposeInMainWorld('inscadaViewer', {
+  apiVersion: 1,
+  isFullscreen: () => ipcRenderer.invoke('fullscreen-state').then((s) => !!s.fullscreen),
+  toggleFullscreen: () => ipcRenderer.send('fullscreen-toggle'),
+  setFullscreen: (on) => ipcRenderer.send('fullscreen-set', !!on),
+  onFullscreenChange: (cb) => {
+    if (typeof cb !== 'function') return () => {};
+    fullscreenListeners.add(cb);
+    return () => fullscreenListeners.delete(cb);
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Touch-friendly fullscreen button.
 // Swiping down from the top edge (touch / pen), or moving the mouse to the very

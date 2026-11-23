@@ -40,6 +40,11 @@ function registerIpc() {
     toggle(BrowserWindow.fromWebContents(event.sender));
   });
 
+  ipcMain.on('fullscreen-set', (event, on) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && !win.isDestroyed() && typeof on === 'boolean') win.setFullScreen(on);
+  });
+
   ipcMain.handle('fullscreen-state', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     return {
