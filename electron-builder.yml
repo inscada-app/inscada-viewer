@@ -10,6 +10,10 @@ win:
   icon: assets/icon.ico
   target:
     - nsis
+  signtoolOptions:
+    sign: ./scripts/electron-builder-sign.js
+    signingHashAlgorithms:
+      - sha256
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
