@@ -26,6 +26,7 @@ const translations = {
 
     // Tray
     'tray.open': 'Aç',
+    'tray.toggleFullscreen': 'Tam Ekran Aç/Kapat',
     'tray.settings': 'Ayarlar',
     'tray.quit': 'Çıkış',
 
@@ -94,6 +95,7 @@ const translations = {
 
     // Tray
     'tray.open': 'Open',
+    'tray.toggleFullscreen': 'Toggle Fullscreen',
     'tray.settings': 'Settings',
     'tray.quit': 'Quit',
 

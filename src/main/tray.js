@@ -10,7 +10,7 @@ function menuIcon(name) {
 
 let tray = null;
 
-function create(mainWindow, { onSettings, onQuit }) {
+function create(mainWindow, { onSettings, onToggleFullscreen, onQuit }) {
   // Destroy previous tray if rebuilding
   if (tray) {
     tray.destroy();
@@ -38,6 +38,11 @@ function create(mainWindow, { onSettings, onQuit }) {
         mainWindow.show();
         mainWindow.focus();
       },
+    },
+    {
+      label: t('tray.toggleFullscreen'),
+      icon: menuIcon('fullscreen'),
+      click: () => onToggleFullscreen(),
     },
     {
       label: t('tray.settings'),

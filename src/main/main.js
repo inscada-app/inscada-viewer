@@ -8,6 +8,7 @@ const tray = require('./tray');
 const ipcHandlers = require('./ipc-handlers');
 const menu = require('./menu');
 const contextMenu = require('./context-menu');
+const fullscreen = require('./fullscreen');
 const locale = require('./locale');
 
 // Set Chromium locale before app is ready
@@ -89,6 +90,7 @@ function createMainWindow() {
   });
 
   contextMenu.register(mainWindow);
+  fullscreen.register(mainWindow);
 
   mainWindow.on('close', (e) => {
     if (!isQuitting) {
@@ -202,6 +204,7 @@ function createNewWindow() {
   });
 
   contextMenu.register(newWin);
+  fullscreen.register(newWin);
 
   if (connectionChecker && connectionChecker.online) {
     newWin.loadURL(settings.url);
@@ -358,6 +361,7 @@ app.whenReady().then(() => {
   });
 
   // Register IPC handlers
+  fullscreen.registerIpc();
   ipcHandlers.register({
     connectionChecker,
     onSettingsSaved: (newSettings) => {
@@ -405,6 +409,11 @@ app.whenReady().then(() => {
   // Setup tray
   trayCallbacks = {
     onSettings: () => createSettingsWindow(),
+    onToggleFullscreen: () => {
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+      mainWindow.show();
+      fullscreen.toggle(mainWindow);
+    },
     onQuit: () => {
       isQuitting = true;
       tray.destroy();
